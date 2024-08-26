@@ -267,7 +267,9 @@ func getColumnsConfig(ctx context.Context, tx pgx.Tx, oid toolkit.Oid, version i
 		if ok {
 			column.CanonicalTypeName = canonicalType.Name
 		}
-		res = append(res, &column)
+		if !column.IsGenerated {
+			res = append(res, &column)
+		}
 		idx++
 	}
 

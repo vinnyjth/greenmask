@@ -74,6 +74,7 @@ func (td *TableDumper) dumper(ctx context.Context, eg *errgroup.Group, w io.Writ
 					return fmt.Errorf("cannot initialize validation pipeline: %w", err)
 				}
 			} else {
+				log.Debug().Msg("table has transformers")
 				pipeline, err = NewTransformationPipeline(ctx, eg, td.table, w)
 				if err != nil {
 					return fmt.Errorf("cannot initialize transformation pipeline: %w", err)
@@ -127,7 +128,7 @@ func (td *TableDumper) process(ctx context.Context, tx pgx.Tx, w io.WriteCloser,
 
 	frontend := tx.Conn().PgConn().Frontend()
 	query, err := td.table.GetCopyFromStatement()
-	log.Debug().
+	log.Warn().
 		Str("query", query).
 		Msgf("dumping table %s.%s using pgcopy query", td.table.Schema, td.table.Name)
 	if err != nil {

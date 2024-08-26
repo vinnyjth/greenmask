@@ -143,6 +143,7 @@ func (tp *TransformationPipeline) TransformSync(ctx context.Context, r *toolkit.
 
 func (tp *TransformationPipeline) TransformAsync(ctx context.Context, r *toolkit.Record) (*toolkit.Record, error) {
 	var err error
+	log.Debug().Msg("transforming async")
 	for _, w := range tp.transformationWindows {
 		_, err = w.Transform(ctx, r)
 		if err != nil {
@@ -171,6 +172,15 @@ func (tp *TransformationPipeline) Dump(ctx context.Context, data []byte) (err er
 	if err != nil {
 		return NewDumpError(tp.table.Schema, tp.table.Name, tp.line, fmt.Errorf("error encoding RowDriver to []byte: %w", err))
 	}
+
+	// Print out the table column names
+	// log.Debug().Msg(fmt.Sprintf("Table columns: %s", tp.table.Columns))
+	// log.Debug().Msg(fmt.Sprintf("Table schema: %s", tp.table.Schema))
+	// Print out the table schema from the record
+	// log.Debug().Msg(fmt.Sprintf("Record schema: %s", tp.record.Driver.Table.Schema))
+	// log.Debug().Msg(tp.row.Decode(data[:len(data)-1]).Error())
+	// Print out the row
+	// log.Debug().Msg(fmt.Sprintf("Row: %s", tp.row))
 
 	_, err = tp.w.Write(res)
 	if err != nil {

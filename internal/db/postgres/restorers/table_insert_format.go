@@ -168,7 +168,7 @@ func (td *TableRestorerInsertFormat) streamInsertData(ctx context.Context, conn 
 
 func (td *TableRestorerInsertFormat) generateInsertStmt(row *pgcopy.Row, onConflictDoNothing bool) string {
 	var placeholders []string
-	for i := 0; i < row.Length(); i++ {
+	for i := 0; i < len(td.Entry.Columns); i++ {
 		placeholders = append(placeholders, fmt.Sprintf("$%d", i+1))
 	}
 	var onConflict string
@@ -176,10 +176,16 @@ func (td *TableRestorerInsertFormat) generateInsertStmt(row *pgcopy.Row, onConfl
 		onConflict = " ON CONFLICT DO NOTHING"
 	}
 
+	// var columns []string = make([]string, row.Length())
+	// for i := 0; i < row.Length(); i++ {
+	// 	columns[i] = fmt.Sprintf(`"%s"`, row.GetColumnName(i))
+	// }
+
 	res := fmt.Sprintf(
-		`INSERT INTO %s.%s VALUES (%s)%s`,
+		`INSERT INTO %s.%s (%s) VALUES (%s)%s`,
 		*td.Entry.Namespace,
 		*td.Entry.Tag,
+		strings.Join(td.Entry.Columns, ", "),
 		strings.Join(placeholders, ", "),
 		onConflict,
 	)
@@ -192,6 +198,22 @@ func (td *TableRestorerInsertFormat) insertDataOnConflictDoNothing(
 	if td.query == "" {
 		td.query = td.generateInsertStmt(row, td.doNothing)
 	}
+	// log.Warn().Msg(td.query)
+	// log.Warn().Msg(fmt.Sprintf("%v", getAllArguments(row)))
+	// log.Warn().Msg(fmt.Sprintf("%v", td.Entry.Columns))
+
+	// log.Warn().Msg(fmt.Sprintf("%v", row.Length()))
+	// log.Warn().Msg(fmt.Sprintf("%v", len(td.Entry.Columns)))
+	// log.Warn().Msg(fmt.Sprintf("%v", len(getAllArguments(row))))
+
+	// array to string with comma separated values
+
+	var displayString string
+	for i := 0; i < len(getAllArguments(row)); i++ {
+		displayString += fmt.Sprintf("%v, ", getAllArguments(row)[i])
+	}
+
+	// log.Warn().Msg(displayString)
 
 	// TODO: The implementation based on pgx.Conn.Exec is not efficient for bulk inserts.
 	// 	Consider rewrite to string literal that contains generated statement instead of using prepared statement

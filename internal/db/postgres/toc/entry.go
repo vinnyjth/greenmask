@@ -49,6 +49,7 @@ type Entry struct {
 	Defn         *string
 	DropStmt     *string
 	CopyStmt     *string
+	Columns      []string
 	Dependencies []int32 /* dumpIds of objects this one depends on */
 	NDeps        int32   /* number of Dependencies */
 	FileName     *string
@@ -93,6 +94,10 @@ func (e *Entry) Copy() *Entry {
 	}
 	if e.FileName != nil {
 		res.FileName = NewObj(*e.FileName)
+	}
+	if e.Columns != nil {
+		res.Columns = make([]string, len(e.Columns))
+		copy(res.Columns, e.Columns)
 	}
 	return res
 }

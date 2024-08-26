@@ -24,6 +24,7 @@ import (
 	"github.com/greenmaskio/greenmask/internal/db/postgres/transformers/custom"
 	"github.com/greenmaskio/greenmask/internal/db/postgres/transformers/utils"
 	"github.com/greenmaskio/greenmask/pkg/toolkit"
+	"github.com/rs/zerolog/log"
 )
 
 // Table - godoc
@@ -83,6 +84,8 @@ func (t *Table) Entry() (*toc.Entry, error) {
 			columns = append(columns, fmt.Sprintf(`"%s"`, column.Name))
 		}
 	}
+	log.Warn().Msg("columns here")
+	log.Warn().Msg(strings.Join(columns, ""))
 
 	var query = `COPY "%s"."%s" (%s) FROM stdin`
 	var schemaName, tableName string
@@ -121,6 +124,7 @@ func (t *Table) Entry() (*toc.Entry, error) {
 		Owner:        &owner,
 		Desc:         &toc.TableDataDesc,
 		CopyStmt:     &copyStmt,
+		Columns:      columns,
 		Dependencies: dependencies,
 		NDeps:        int32(len(dependencies)),
 		FileName:     &fileName,
@@ -130,7 +134,15 @@ func (t *Table) Entry() (*toc.Entry, error) {
 }
 
 func (t *Table) GetCopyFromStatement() (string, error) {
-	query := fmt.Sprintf("COPY \"%s\".\"%s\" TO STDOUT", t.Schema, t.Name)
+
+	columns := make([]string, 0, len(t.Columns))
+	for _, column := range t.Columns {
+		if !column.IsGenerated {
+			columns = append(columns, fmt.Sprintf(`"%s"`, column.Name))
+		}
+	}
+
+	query := fmt.Sprintf("COPY \"%s\".\"%s\" (%s) TO STDOUT", t.Schema, t.Name, strings.Join(columns, ", "))
 	if t.Query != "" {
 		query = fmt.Sprintf("COPY (%s) TO STDOUT", t.Query)
 	}
