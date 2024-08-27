@@ -20,6 +20,7 @@ import (
 	"io"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 )
@@ -402,6 +403,20 @@ func (r *Reader) readEntries() ([]*Entry, error) {
 				return nil, fmt.Errorf("cannot read Defn: %w", err)
 			}
 			entry.CopyStmt = copyStmt
+
+			entry.Columns = make([]string, 0)
+			// pull column names from copyStmt
+			// example: COPY "public"."user_community_notification_preference" ("id", "person_id", "community_id", "notification_preference", "created_at", "updated_at", "church_slug") FROM stdin
+			if copyStmt != nil {
+				columns := strings.Split(*copyStmt, "(")
+				if len(columns) > 1 {
+					columns = strings.Split(columns[1], ")")
+					if len(columns) > 0 {
+						entry.Columns = strings.Split(columns[0], ",")
+					}
+				}
+			}
+
 		}
 
 		if r.version >= BackupVersions["1.6"] {
